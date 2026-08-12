@@ -29,11 +29,12 @@ orchestrated by parallel AI agents.
 
 ## Target Architecture (one paragraph)
 
-Single FastAPI service on one port (:8000): REST API + SSE push + static dashboard, PostgreSQL-backed
-state (no JSON files), eval7 equity engine imported in-process (no HTTP hop), modular w4p-v2.js
-scraper (~500 lines) with per-platform selector profiles (EvenBet + BetConstruct). Built in 5
-vertical slices, each ending with a tested, demonstrable tracer bullet. Parallel AI subagents
-implement independent modules against a frozen interface contract (`docs/CONTRACTS.md`).
+Single FastAPI service on one port (:8000): REST API + SSE push + one unified dashboard page
+(remote control grid + equity calculator together — not two pages), PostgreSQL-backed state in a
+fresh `new_er` database (no JSON files), eval7 equity engine imported in-process (no HTTP hop),
+modular w4p-v2.js scraper (~500 lines) with per-platform selector profiles (EvenBet + BetConstruct).
+Built in 5 vertical slices, each ending with a tested, demonstrable tracer bullet. Parallel AI
+subagents implement independent modules against a frozen interface contract (`docs/CONTRACTS.md`).
 
 ## Build Sequence (vertical slices)
 

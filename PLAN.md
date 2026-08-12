@@ -40,6 +40,7 @@ The legacy `E-R` repo (106 commits, 16,492 LOC) was the source of constant bug-c
 6. **Typed interfaces** — dataclasses/TypedDict everywhere, no dict soup.
 7. **Testable by design** — every module has a unit test; every slice has an integration test.
 8. **Agent-orchestrated** — parallel subagents build independent slices against shared contracts.
+9. **Unified UI** — remote control and equity calculator on one dashboard page (legacy had two separate pages).
 
 ---
 
@@ -79,7 +80,7 @@ The legacy `E-R` repo (106 commits, 16,492 LOC) was the source of constant bug-c
 │  └────────────────────────────────────────────────────────┘ │
 │                                                             │
 │  External:                                                  │
-│    PostgreSQL (er_hands DB @ host:5432, new schema)         │
+│    PostgreSQL (new_er DB @ host:5432)                       │
 │    W4P v2 scraper (injected JS in browser)                  │
 │    Operator dashboard (static UI, SSE live)                 │
 └─────────────────────────────────────────────────────────────┘
@@ -90,8 +91,8 @@ The legacy `E-R` repo (106 commits, 16,492 LOC) was the source of constant bug-c
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Framework | **FastAPI** (async) | Native async/await, SSE, WebSocket, Pydantic validation, OpenAPI docs. Flask 3.1 is sync; async is the right model for SSE push + concurrent snapshot ingestion |
-| State | **PostgreSQL** (existing `er_hands` DB) | Already running on host:5432; JSONB for runtime state, relational for history. No JSON files |
-| UI | **Static HTML+JS** served by the app (no Express/Node) | Eliminates the entire Express proxy layer + PNA headache. One port, one process |
+| State | **PostgreSQL** (fresh `new_er` DB on host:5432) | Same PG server, isolated database — zero risk to legacy `er_hands`. JSONB for runtime state, relational for history. No JSON files |
+| UI | **Static HTML+JS, single unified page** served by the app (no Express/Node) | Remote control grid + equity calculator on ONE dashboard page (legacy had 2 separate pages). Eliminates the Express proxy layer + PNA headache. One port, one process |
 | Extension comms | **Direct to :8000** via CORS headers + API key | No bridge needed in v2. Chrome PNA solved via `--disable-web-security` flag in launch config |
 | Equity | **eval7 imported in-process** | No subprocess, no HTTP hop. Same library, direct calls |
 | Scraper | **w4p-v2.js** (~500 lines) | Modular selectors per platform (EvenBet, BetConstruct), config-driven |
@@ -105,6 +106,7 @@ The legacy `E-R` repo (106 commits, 16,492 LOC) was the source of constant bug-c
 | Processes | 3 (Express, Flask, Engine) | 1 | -66% |
 | Ports | 3 (4000, 1080, 5002) | 1 (8000) | -66% |
 | HTTP hops per snapshot | 2 (browser→Express→Flask→Engine) | 1 (browser→app) | -50% |
+| UI pages | 2 (remote + engine) | 1 (unified dashboard) | -50% |
 | State copies | 8 | 1 (PG) | -87% |
 | Polling traffic | 4 req/s per UI | SSE push | -93% |
 
@@ -144,7 +146,7 @@ NEW_E-R/
 │   │   ├── evenbet.py          # EvenBet/PokerAlpha DOM selectors
 │   │   ├── betconstruct.py     # GoldRush/BetConstruct DOM selectors
 │   │   └── registry.py         # Selector registry (validated at startup)
-│   ├── static/                 # Operator dashboard (served by FastAPI)
+│   ├── static/                 # Unified dashboard: remote grid + equity panel (served by FastAPI)
 │   │   ├── index.html          # Dashboard shell
 │   │   └── app.js              # SSE client + table grid + equity panel
 │   └── requirements.txt        # fastapi, uvicorn, sqlalchemy, asyncpg, pydantic-settings, eval7
@@ -230,7 +232,7 @@ Each slice is a **complete vertical slice through ALL layers** — API → servi
 
 - [ ] POST /api/equity { hands, board } → equity % for each hand (eval7 direct)
 - [ ] Results streamed via SSE (no polling)
-- [ ] Dashboard shows equity grid
+- [ ] Single dashboard page shows remote grid + equity panel together (no separate /engine page)
 - [ ] Edge case: invalid cards → clear error
 
 ### Slice 4: Command Automation + Multi-Table
@@ -365,9 +367,9 @@ class EquityCalculator:
 
 ---
 
-## 7. Database Schema (PostgreSQL, `er_hands` DB)
+## 7. Database Schema (PostgreSQL, fresh `new_er` database)
 
-Existing schema from `000-init-schema.sql` (already written in legacy repo) is adapted. Core tables:
+Existing schema from `000-init-schema.sql` (already written in legacy repo) is adapted into the fresh `new_er` database (created by Alembic, never touches `er_hands`). Core tables:
 
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|
@@ -407,7 +409,7 @@ write-through cache, no duplicate state copies). Historical data (hands, equity,
 
 - **Per slice:** each slice is tagged (`v2.0.0-slice-N`). Any instability → `git revert` to previous tag.
 - **Parallel deployment:** legacy E-R keeps running during the rebuild (it's deployed as Docker containers on the VM). NEW_E-R deploys side-by-side on port 8000. No downtime.
-- **Data safety:** new schema in same `er_hands` DB but with distinct table names (`new_` prefix if needed) — no destructive migration of legacy tables.
+- **Data safety:** NEW_E-R uses a fresh `new_er` database (created by migration). Legacy `er_hands` DB and E-R tables are never touched — zero migration risk.
 
 ---
 
@@ -418,7 +420,7 @@ write-through cache, no duplicate state copies). Historical data (hands, equity,
 | M0 | Skeleton + contracts | Buildable repo, CI green | `pytest` pass, `/api/health` 200 |
 | M1 (Slice 1) | Tracer bullet pipeline | Snapshot → PG → UI | TB-001 harness green |
 | M2 (Slice 2) | Table interaction | Queue → execute → ACK | TB-002 harness green |
-| M3 (Slice 3) | Equity in-process + SSE | Equity grid live | TB-003 harness green |
+| M3 (Slice 3) | Equity in-process + SSE | Equity grid live on same dashboard page | TB-003 harness green |
 | M4 (Slice 4) | Automation + multi-table | Auto C/F, C/C, KH | TB-004 harness green |
 | M5 (Slice 5) | GoldRush multi-platform | Both platforms live | TB-005 harness green |
 
