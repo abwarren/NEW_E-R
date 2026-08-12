@@ -1,5 +1,14 @@
 # NEW_E-R — Greenfield E&R Poker Platform Rebuild
 
+> ## ⚠️ SUPERSEDED (2026-08-12)
+>
+> This greenfield rebuild is **abandoned**. Per the system harmonization decision —
+> **one application, different tenants (poker sites), reuse not rebuild** — all work
+> now lands in **[github.com/abwarren/pokerhud](https://github.com/abwarren/pokerhud)**.
+> The strategy lives at `pokerhud/docs/SYSTEM-HARMONIZATION.md` (one repo, one DB,
+> one process; retire the E-R/er-remote/er-engine cluster and the extra DBs).
+> This repo is kept for plan history only.
+
 Greenfield rebuild of the E&R poker remote-control + equity platform. Replaces the
 poorly-engineered legacy codebase at [github.com/abwarren/E-R](https://github.com/abwarren/E-R)
 with a clean, modular, single-service architecture built with vertical slicing and tracer bullets,
