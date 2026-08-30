@@ -6,9 +6,13 @@
 
 ## Status
 
-**PARTIAL — READY**: backend, extension, 39 tests and a 16-step E2E harness all
-green (in-process). The live-table acceptance test needs valid PokerBet
-credentials (EXTERNAL BLOCKER). See `docs/REPORT-AJ.md`, `MILESTONE.md`.
+**PARTIAL — READY**: backend, extension, 45 tests and a 16-step E2E harness all
+green (in-process). Multi-device: extension config is per-device via the
+options page (server URL / API key / player/browser IDs, stored in
+chrome.storage); the backend aggregates any number of devices and the
+dashboard shows per-player 🟢 ONLINE / 🔴 OFFLINE status. The live-table
+acceptance test needs valid PokerBet credentials (EXTERNAL BLOCKER). See
+`docs/REPORT-AJ.md`, `MILESTONE.md`, `DEPLOYMENT/PLAYER_DEVICE.md`.
 
 ## Quick start
 
@@ -27,8 +31,10 @@ Player accounts (passwords → OS keyring, never on disk):
 .venv/bin/python scripts/er-players.py list
 ```
 
-Extension: chrome://extensions → Load unpacked → `extension/` → set identity in
-options → open `https://poker-web.pokerbet.co.za/18751019/`.
+Extension: chrome://extensions → Load unpacked → `extension/` → set server URL,
+API key, player and browser IDs in options (per device) → open
+`https://poker-web.pokerbet.co.za/18751019/`. Full per-device guide:
+`DEPLOYMENT/PLAYER_DEVICE.md`.
 
 ## Layout
 
@@ -37,8 +43,10 @@ backend/          FastAPI service (config, models, schemas, state, command_queue
                   equity, main, players/, static/ dashboard)
 extension/        Chrome MV3 (manifest.json, w4p.js scraper+executor, options.html)
 scripts/          er-players.py (account CLI), run_e2e.py (acceptance harness)
-tests/            pytest (33) + node scraper tests (6) + dom_harness
+tests/            pytest (45) + node scraper tests (10) + dom_harness
 docs/             CONTRACTS.md, DOM-MAP.md, ADR-001..005, DEPLOYMENT.md, REPORT-AJ.md
+DEPLOYMENT/       PLAYER_DEVICE.md (exact per-device extension install)
+dist/             packaged extension zip (e-r-extension.zip)
 evidence/e2e/     E2E evidence output
 ```
 

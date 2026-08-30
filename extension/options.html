@@ -18,12 +18,28 @@
       $('browserId').value = v.erBrowserId || '';
     });
     $('save').onclick = () => {
+      const apiBase = $('apiBase').value.trim();
+      let origin = '';
+      try { origin = new URL(apiBase).origin + '/*'; } catch (e) { /* keep '' */ }
       chrome.storage.local.set({
-        erApiBase: $('apiBase').value.trim(),
+        erApiBase: apiBase,
         erApiKey: $('apiKey').value.trim(),
         erPlayerId: $('playerId').value.trim(),
         erBrowserId: $('browserId').value.trim()
-      }, () => { $('msg').textContent = 'saved — reload the poker table tab'; });
+      }, () => {
+        // Host permission for the E&R server origin: without it the content
+        // script's fetch to a remote server is CORS-blocked by the browser.
+        const finish = (granted) => {
+          $('msg').textContent = granted === false
+            ? 'saved — but host permission denied, snapshots will be blocked'
+            : 'saved — reload the poker table tab';
+        };
+        if (origin && chrome.permissions && chrome.permissions.request) {
+          chrome.permissions.request({ origins: [origin] }, finish);
+        } else {
+          finish(true);
+        }
+      });
     };
   </script>
 </body>

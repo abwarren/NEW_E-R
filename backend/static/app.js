@@ -16,6 +16,13 @@ function cardHtml(cards) {
   return '<span class="cards">' + cards.join(' ') + '</span>';
 }
 
+// a player is ONLINE if any of their tables has fresh snapshots
+function playerStatus(tables) {
+  return tables.some(t => !t.is_stale)
+    ? '<span class="live">🟢 ONLINE</span>'
+    : '<span class="stale">🔴 OFFLINE</span>';
+}
+
 // ── fleet render: group tables by player (REMOTE → PLAYER → TABLE) ───────
 function renderFleet(rows) {
   const root = $('fleet');
@@ -29,7 +36,7 @@ function renderFleet(rows) {
   });
   root.innerHTML = Object.keys(byPlayer).map(pid => `
     <div class="player-block">
-      <div class="player-head">👤 ${pid} <span class="muted">(${byPlayer[pid].length} table${byPlayer[pid].length > 1 ? 's' : ''})</span></div>
+      <div class="player-head">👤 ${pid} <span class="muted">(${byPlayer[pid].length} table${byPlayer[pid].length > 1 ? 's' : ''})</span> ${playerStatus(byPlayer[pid])}</div>
       ${byPlayer[pid].map(t => tableCard(t)).join('')}
     </div>`).join('');
 }
@@ -43,8 +50,9 @@ function tableCard(t) {
         <span class="badge street">${t.street || '—'}</span>
         <b>Table ${t.table_id}</b>
         <span class="muted">hand ${t.hand_id || '—'}</span>
-        <span class="muted">${t.is_stale ? 'STALE' : 'live'}</span>
-        <span class="muted">v${t.snapshot_version} ${fmtTime(t.updated_at)}</span>
+        <span class="muted">browser ${t.browser_instance_id}</span>
+        <span class="${t.is_stale ? 'stale' : 'live'}">${t.is_stale ? '🔴 STALE' : '🟢 live'}</span>
+        <span class="muted">last ${fmtTime(t.updated_at)} · v${t.snapshot_version}</span>
       </div>
       <div class="table-body">
         <div class="table-meta">

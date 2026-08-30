@@ -46,9 +46,16 @@ curl -H "X-API-Key: $ER_API_KEY" http://127.0.0.1:8090/api/health
 
 ## 4. Extension
 
-1. chrome://extensions → Developer mode → Load unpacked → `extension/`
-2. Options → API base `http://127.0.0.1:8090`, API key, Player ID, Browser ID
-3. Open `https://poker-web.pokerbet.co.za/18751019/` → snapshots flow
+Per-device install is fully documented in `DEPLOYMENT/PLAYER_DEVICE.md`. Short
+version:
+
+1. Copy `extension/` (3 files: manifest.json, w4p.js, options.html) to the device.
+2. chrome://extensions → Developer mode → Load unpacked → that directory.
+3. Options → API base, API key, Player ID, Browser ID → Save (grant the host
+   permission prompt for remote servers).
+4. Open `https://poker-web.pokerbet.co.za/18751019/` → snapshots flow.
+
+Config is stored in `chrome.storage.local` per device — no JS editing.
 
 ## 5. PostgreSQL (production state store)
 
@@ -82,7 +89,89 @@ Production uses the explicit DDL in `backend/migrations/001_postgres.sql`
 
 ## 6. Dashboard
 
-Open `http://127.0.0.1:8090/` — tables grid + directional equity cards, SSE live.
+Open `http://127.0.0.1:8090/` — fleet grid (per player: 🟢 ONLINE / 🔴 OFFLINE,
+tables, hands, streets, last-seen), directional equity cards, SSE live.
+A device that stops sending snapshots turns 🔴 OFFLINE after
+`ER_STALE_SNAPSHOT_SECONDS` (default 30s).
+
+## 7. Remote / multi-device deployment
+
+Player devices run Chrome + the extension and connect to ONE central E&R
+server. Required changes vs local dev:
+
+### 7.1 Server bind + firewall
+
+```bash
+# .env — listen on all interfaces so remote devices can connect
+ER_HOST=0.0.0.0
+```
+
+Open one port (8090) in the firewall for the E&R server. Prefer restricting
+the source to the VPN / device subnet:
+
+```bash
+sudo ufw allow from 192.168.0.0/16 to any port 8090 proto tcp   # LAN
+# or, remote: allow only from your VPN range, e.g. 10.8.0.0/24
+```
+
+Devices must reach `http://<server-ip>:8090/api/health`.
+
+### 7.2 HTTPS (recommended for anything beyond a trusted LAN)
+
+The extension works over plain HTTP, but API keys in cleartext travel the
+network — use HTTPS for remote deployment. nginx reverse proxy example:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name er.example.com;
+    ssl_certificate     /etc/letsencrypt/live/er.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/er.example.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8090;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;                 # SSE must not be buffered
+    }
+}
+```
+
+API base on devices: `https://er.example.com` (no port, no path).
+
+### 7.3 CORS
+
+The extension's content-script fetch bypasses CORS via its manifest host
+permission (granted on the options page). Non-extension callers (a dashboard
+opened from another host, dev tools) need the server's explicit allow-list:
+
+```bash
+# .env — comma-separated origins
+ER_ALLOWED_ORIGINS=https://dash.example.com,http://192.168.0.10:8090
+```
+
+Default (empty) = fully locked down; preflight from foreign origins is
+rejected. API-key auth still gates every request.
+
+### 7.4 VPN / private network
+
+For N devices in the field, prefer a VPN (WireGuard/Tailscale) with the E&R
+server on the private range — the extension then talks `https://er:8090` or
+`http://10.x.x.x:8090` and the server never needs public exposure.
+
+### 7.5 Reconnect / offline behavior
+
+- The extension polls every 800 ms; a failed request is silently retried —
+  no backoff logic needed, snapshots resume automatically when the network
+  returns.
+- The dashboard marks a device 🔴 OFFLINE when no snapshot arrived for
+  `ER_STALE_SNAPSHOT_SECONDS` (default 30s) and back to 🟢 ONLINE on the next
+  snapshot.
+- Commands claimed but never ACKed are returned to the queue as TIMEOUT
+  after `ER_COMMAND_TIMEOUT_SECONDS` (default 20s); the extension's
+  command-id memo prevents double execution.
 
 ## Rollback
 

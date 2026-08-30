@@ -22,6 +22,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
@@ -55,6 +56,20 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+
+# CORS: explicit allow-list only (ER_ALLOWED_ORIGINS). Empty list = locked
+# down (no cross-origin browser access) — the extension's content-script
+# traffic bypasses CORS via manifest host permissions, so a remote E&R origin
+# must be allowed HERE only for non-extension callers (operator dashboard on
+# another host, dev tools, reverse-proxy contexts). API-key auth still gates
+# every request.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ── auth ───────────────────────────────────────────────────────────────────

@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
+from .config import settings
 from .db import session
 from .models import Command, Event, SeatSnapshot, TableState
 from .players.identity import IdentityService, StateKey
@@ -174,13 +175,37 @@ class StateStore:
         return json.dumps(list(by_no.values()))
 
     # ── reads ─────────────────────────────────────────────────────────────
+    @staticmethod
+    def _row_age(row) -> float:
+        updated = row.updated_at
+        if updated.tzinfo is None:
+            updated = updated.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - updated).total_seconds()
+
     def list_tables(self, include_stale: bool = True) -> list[TableView]:
+        """All table views; age-based staleness is computed here too, so the
+        fleet dashboard can mark a silently-disconnected device as OFFLINE
+        without anyone having to poll /api/table/{id} first. A row is stale
+        when flagged OR older than ER_STALE_SNAPSHOT_SECONDS; include_stale
+        filters on the computed value, not the persisted flag alone."""
         with session() as s:
-            q = select(TableState).order_by(TableState.updated_at.desc())
-            if not include_stale:
-                q = q.where(TableState.is_stale.is_(False))
-            rows = s.execute(q).scalars().all()
-            return [self._to_view(r) for r in rows]
+            rows = s.execute(select(TableState).order_by(TableState.updated_at.desc())).scalars().all()
+            changed = False
+            views = []
+            for r in rows:
+                age = self._row_age(r)
+                is_stale = r.is_stale or age > settings.stale_snapshot_seconds
+                if is_stale and not r.is_stale:
+                    r.is_stale = True
+                    changed = True
+                if not include_stale and is_stale:
+                    continue
+                view = self._to_view(r)
+                view.is_stale = is_stale
+                views.append(view)
+            if changed:
+                s.commit()
+            return views
 
     def get_table(self, player_id: str, browser_instance_id: str, table_id: str) -> TableView | None:
         sk = scope_key(player_id, browser_instance_id, table_id)
@@ -194,16 +219,12 @@ class StateStore:
             ).scalar_one_or_none()
             if row is None:
                 return None
-            # SQLite returns naive datetimes; normalize before comparing.
-            updated = row.updated_at
-            if updated.tzinfo is None:
-                updated = updated.replace(tzinfo=timezone.utc)
-            age = (datetime.now(timezone.utc) - updated).total_seconds()
-            if age > 30 and not row.is_stale:
+            age = self._row_age(row)
+            if age > settings.stale_snapshot_seconds and not row.is_stale:
                 row.is_stale = True
                 s.commit()
             view = self._to_view(row)
-            view.is_stale = row.is_stale or age > 30
+            view.is_stale = row.is_stale or age > settings.stale_snapshot_seconds
             return view
 
     @staticmethod

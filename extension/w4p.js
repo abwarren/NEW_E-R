@@ -17,16 +17,64 @@
   if (window.__er_w4p_loaded) return;
   window.__er_w4p_loaded = true;
 
+  // ── configuration ───────────────────────────────────────────────────────
+  // Precedence: window.ER_* globals (console-paste dev mode) → chrome.storage
+  // (options page — the supported per-device config) → dev defaults.
+  var CONFIG_DEFAULTS = {
+    apiBase: 'http://127.0.0.1:8090',
+    apiKey: '',
+    playerId: '',
+    browserInstanceId: ''
+  };
   var CONFIG = {
-    apiBase: (window.ER_API_BASE || 'http://127.0.0.1:8090'),
-    apiKey: (window.ER_API_KEY || ''),
-    // identity: set explicitly per browser instance. player_id/browser are
-    // the E&R composite-identity anchors — never guessed.
-    playerId: (window.ER_PLAYER_ID || ''),
-    browserInstanceId: (window.ER_BROWSER_ID || ''),
+    apiBase: CONFIG_DEFAULTS.apiBase,
+    apiKey: CONFIG_DEFAULTS.apiKey,
+    playerId: CONFIG_DEFAULTS.playerId,
+    browserInstanceId: CONFIG_DEFAULTS.browserInstanceId,
     pollMs: 800,
     snapshotMs: 1200
   };
+
+  function pickConfig(winVal, storedVal, key) {
+    if (winVal !== undefined && winVal !== null && String(winVal).trim() !== '') return winVal;
+    if (storedVal !== undefined && storedVal !== null && String(storedVal).trim() !== '') return storedVal;
+    return CONFIG_DEFAULTS[key];
+  }
+
+  function logConfig() {
+    console.log('[ER-W4P] config | player=' + CONFIG.playerId + ' browser=' + CONFIG.browserInstanceId + ' api=' + CONFIG.apiBase);
+  }
+
+  function loadConfig(cb) {
+    var fromWindow = {
+      apiBase: window.ER_API_BASE,
+      apiKey: window.ER_API_KEY,
+      playerId: window.ER_PLAYER_ID,
+      browserInstanceId: window.ER_BROWSER_ID
+    };
+    var apply = function (stored) {
+      CONFIG.apiBase = pickConfig(fromWindow.apiBase, stored.erApiBase, 'apiBase');
+      CONFIG.apiKey = pickConfig(fromWindow.apiKey, stored.erApiKey, 'apiKey');
+      CONFIG.playerId = pickConfig(fromWindow.playerId, stored.erPlayerId, 'playerId');
+      CONFIG.browserInstanceId = pickConfig(fromWindow.browserInstanceId, stored.erBrowserId, 'browserInstanceId');
+      logConfig();
+      if (cb) cb();
+    };
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['erApiBase', 'erApiKey', 'erPlayerId', 'erBrowserId'], apply);
+      // live reload: saving the options page updates this tab without a reload
+      chrome.storage.onChanged.addListener(function (changes, area) {
+        if (area !== 'local') return;
+        if (changes.erApiBase) CONFIG.apiBase = pickConfig(undefined, changes.erApiBase.newValue, 'apiBase');
+        if (changes.erApiKey) CONFIG.apiKey = pickConfig(undefined, changes.erApiKey.newValue, 'apiKey');
+        if (changes.erPlayerId) CONFIG.playerId = pickConfig(undefined, changes.erPlayerId.newValue, 'playerId');
+        if (changes.erBrowserId) CONFIG.browserInstanceId = pickConfig(undefined, changes.erBrowserId.newValue, 'browserInstanceId');
+        logConfig();
+      });
+    } else {
+      apply({}); // node harness / console-paste mode: window globals or defaults
+    }
+  }
 
   // ── Selector profile: PokerBet (BetConstruct SkillGames) ───────────────
   // Live-verified 2026-08-30 at poker-web.pokerbet.co.za/18751019/
@@ -251,7 +299,9 @@
 
   // ── main loop ───────────────────────────────────────────────────────────
   function loop() {
-    if (isPokerBet() && hasTableProof()) {
+    // identity is the anchor for E&R's isolation model — never send a
+    // snapshot that cannot be attributed (server would reject it anyway)
+    if (isPokerBet() && hasTableProof() && CONFIG.playerId && CONFIG.browserInstanceId) {
       var snap = scrapeTable();
       state.lastHandId = snap.hand_id;
       sendSnapshot(snap);
@@ -260,8 +310,7 @@
     setTimeout(loop, CONFIG.pollMs);
   }
 
-  setTimeout(loop, 1500);
-  console.log('[ER-W4P] loaded | player=' + CONFIG.playerId + ' browser=' + CONFIG.browserInstanceId + ' api=' + CONFIG.apiBase);
+  loadConfig(function () { setTimeout(loop, 1500); });
 
   // test hook — lets the node harness drive extraction deterministically
   window.__er_w4p_test = { scrapeTable: scrapeTable, executeCommand: executeCommand, config: CONFIG };

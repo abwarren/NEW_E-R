@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
   "name": "E&R PokerBet",
-  "version": "0.1.0",
-  "description": "E&R remote table control for PokerBet (BetConstruct SkillGames) — scrapes table state, executes remote commands.",
+  "version": "0.2.0",
+  "description": "E&R remote table control for PokerBet (BetConstruct SkillGames) — scrapes table state, executes remote commands. Connects to a central E&R server (options page).",
   "permissions": ["storage"],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "host_permissions": [
     "*://poker-web.pokerbet.co.za/*",
     "*://*.pokerbet.co.za/*",
