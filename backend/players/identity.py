@@ -46,9 +46,23 @@ class IdentityService:
     def __init__(self, db: PlayerDatabase):
         self._db = db
 
-    def resolve_browser(self, player_id: str, browser_instance_id: str) -> None:
-        """Raise if the browser instance does not belong to the player."""
-        inst = self._db.get_browser_instance(browser_instance_id)
+    def resolve_browser(self, player_id: str, browser_instance_id: str, auto_enroll: bool = False) -> None:
+        """Raise if the browser instance does not belong to the player.
+
+        With auto_enroll (first-contact enrollment), an unknown browser id is
+        registered as belonging to this player — the extension claims its
+        identity on first snapshot, like a device enrolling. Ownership is
+        still enforced: an id already bound to another player is refused.
+        """
+        try:
+            inst = self._db.get_browser_instance(browser_instance_id)
+        except KeyError:
+            if auto_enroll:
+                self._db.register_browser_instance(
+                    player_id, instance_label=f"auto:{browser_instance_id}", browser_instance_id=browser_instance_id
+                )
+                return
+            raise
         if inst.player_id != player_id:
             raise PermissionError(
                 f"browser {browser_instance_id} belongs to player "
@@ -70,9 +84,13 @@ class IdentityService:
         hand_id: str = "",
         snapshot_version: int = 0,
     ) -> StateKey:
-        """Build a StateKey, enforcing player↔browser ownership first."""
+        """Build a StateKey, enforcing player↔browser ownership first.
+
+        First snapshot from an unknown browser auto-enrolls it to the player
+        (device-enrollment); afterwards the binding is immutable.
+        """
         self.require_player_enabled(player_id)
-        self.resolve_browser(player_id, browser_instance_id)
+        self.resolve_browser(player_id, browser_instance_id, auto_enroll=True)
         if not table_id:
             raise ValueError("table_id is required")
         return StateKey(

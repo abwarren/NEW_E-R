@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>E&amp;R PokerBet — Operator Dashboard</title>
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --line:#30363d; --fg:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149; --amber:#d29922; --blue:#58a6ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  header { display:flex; align-items:center; gap:16px; padding:10px 16px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:5; }
+  header h1 { font-size:16px; margin:0; }
+  #conn { font-size:12px; color:var(--muted); }
+  #conn.live { color:var(--green); }
+  .grid { display:grid; grid-template-columns: 1fr 380px; gap:12px; padding:12px; }
+  @media (max-width:1100px){ .grid { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; }
+  .panel h2 { margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  .stale { color:var(--red); font-weight:700; }
+  .live { color:var(--green); }
+  .badge { display:inline-block; padding:1px 7px; border-radius:10px; font-size:11px; background:#21262d; border:1px solid var(--line); }
+  .badge.street { color:var(--blue); }
+  .badge.hero { color:var(--green); }
+  .badge.actions { color:var(--amber); }
+  .btn { background:#21262d; color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:4px 10px; cursor:pointer; font-size:12px; }
+  .btn:hover { border-color:var(--blue); }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .btn.fold { color:var(--red); } .btn.call { color:var(--green); } .btn.raise { color:var(--amber); }
+  #log { max-height:240px; overflow:auto; font:11px/1.5 ui-monospace, monospace; color:var(--muted); }
+  #log div { padding:1px 0; border-bottom:1px dashed #21262d; }
+  .cards { letter-spacing:.12em; font-weight:700; }
+  .eqbar { height:14px; background:#21262d; border-radius:7px; overflow:hidden; margin:3px 0; }
+  .eqbar > div { height:100%; background:linear-gradient(90deg,#1f6feb,#3fb950); }
+  .muted { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>E&amp;R PokerBet</h1>
+  <span id="conn">connecting…</span>
+  <span class="muted" id="clock"></span>
+</header>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Active tables</h2>
+    <table id="tables"><thead>
+      <tr><th>Scope (player / browser)</th><th>Table</th><th>Hand</th><th>Street</th><th>Hero</th><th>Pot</th><th>Board</th><th>Actions</th><th>State</th><th>Updated</th></tr>
+    </thead><tbody id="tbody"><tr><td colspan="10" class="muted">no tables yet — waiting for snapshots…</td></tr></tbody></table>
+  </div>
+
+  <div class="panel">
+    <h2>Equity (eval7 in-process)</h2>
+    <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+      <input id="eq-hands" placeholder='[["As","Ks","Qh","Jh"],["2c","2d","2h","2s"]]' style="flex:1; min-width:220px; background:#0d1117; border:1px solid var(--line); color:var(--fg); border-radius:6px; padding:6px; font:12px ui-monospace,monospace;">
+      <input id="eq-board" placeholder='["Td","9c","3s"]' style="width:150px; background:#0d1117; border:1px solid var(--line); color:var(--fg); border-radius:6px; padding:6px; font:12px ui-monospace,monospace;">
+      <button class="btn" id="eq-run">Run</button>
+    </div>
+    <div id="eq-result" class="muted">run a calculation to see equity</div>
+  </div>
+
+  <div class="panel" style="grid-column:1/-1;">
+    <h2>Event log (SSE)</h2>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

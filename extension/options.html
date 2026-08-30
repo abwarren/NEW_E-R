@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>E&R PokerBet config</title></head>
+<body style="font:13px system-ui; width:300px; padding:10px;">
+  <h3 style="margin:0 0 10px;">E&R PokerBet</h3>
+  <label>API base<br><input id="apiBase" style="width:100%" value="http://127.0.0.1:8090"></label><br><br>
+  <label>API key<br><input id="apiKey" type="password" style="width:100%"></label><br><br>
+  <label>Player ID<br><input id="playerId" style="width:100%" placeholder="p_..."></label><br><br>
+  <label>Browser instance ID<br><input id="browserId" style="width:100%" placeholder="b_..."></label><br><br>
+  <button id="save" style="width:100%; padding:6px;">Save</button>
+  <div id="msg" style="margin-top:8px; color:#3fb950;"></div>
+  <script>
+    const $ = id => document.getElementById(id);
+    chrome.storage.local.get(['erApiBase', 'erApiKey', 'erPlayerId', 'erBrowserId'], v => {
+      $('apiBase').value = v.erApiBase || 'http://127.0.0.1:8090';
+      $('apiKey').value = v.erApiKey || '';
+      $('playerId').value = v.erPlayerId || '';
+      $('browserId').value = v.erBrowserId || '';
+    });
+    $('save').onclick = () => {
+      chrome.storage.local.set({
+        erApiBase: $('apiBase').value.trim(),
+        erApiKey: $('apiKey').value.trim(),
+        erPlayerId: $('playerId').value.trim(),
+        erBrowserId: $('browserId').value.trim()
+      }, () => { $('msg').textContent = 'saved — reload the poker table tab'; });
+    };
+  </script>
+</body>
+</html>
