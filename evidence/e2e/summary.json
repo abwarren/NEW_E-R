@@ -1,0 +1,102 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "name": "backend healthy",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 2,
+      "name": "two players + browser instances registered",
+      "ok": true,
+      "detail": "e2e_alice,e2e_bob"
+    },
+    {
+      "step": 5,
+      "name": "hero/hole cards/state captured (alice preflop)",
+      "ok": true,
+      "detail": "{\"player_id\":\"e2e_alice\",\"browser_instance_id\":\"dbd5cf0b735f\",\"table_id\":\"E2E-T1"
+    },
+    {
+      "step": 6,
+      "name": "board captured (flop)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 7,
+      "name": "snapshot persisted + listed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 8,
+      "name": "dashboard state correct",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 9,
+      "name": "hero seat + hole cards present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 10,
+      "name": "equity calculated (eval7 in-process)",
+      "ok": true,
+      "detail": "[0.0, 100.0]"
+    },
+    {
+      "step": 11,
+      "name": "operator command queued",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 12,
+      "name": "correct browser claims command",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 13,
+      "name": "other bot cannot claim",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 14,
+      "name": "ACK reaches E&R",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 15,
+      "name": "pending empty after ACK",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 16,
+      "name": "two tables fully isolated",
+      "ok": true,
+      "detail": "T1=FLOP/60.0 T2=TURN/80.0"
+    },
+    {
+      "step": 17,
+      "name": "two bots same table isolated",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "step": 18,
+      "name": "stale snapshot visibly rejected (409)",
+      "ok": true,
+      "detail": "{\"detail\":\"snapshot v1 older than current v2 for player=e2e_alice|browser=dbd5cf"
+    }
+  ],
+  "ok": 16,
+  "fail": 0
+}

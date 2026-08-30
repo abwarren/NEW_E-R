@@ -1,0 +1,176 @@
+[
+  {
+    "player_id": "e2e_bob",
+    "browser_instance_id": "979cd59faaf6",
+    "table_id": "E2E-T1",
+    "hand_id": "H300",
+    "snapshot_version": 1,
+    "street": "PRE_FLOP",
+    "pot": 10.0,
+    "board": [],
+    "seats": [
+      {
+        "seat_no": 0,
+        "name": "BobBot",
+        "stack": 1000.0,
+        "hole_cards": [
+          "2c",
+          "2d",
+          "2h",
+          "2s"
+        ],
+        "bet": 5.0,
+        "is_hero": true,
+        "is_dealer": false,
+        "sitting_out": false,
+        "active": false
+      },
+      {
+        "seat_no": 1,
+        "name": "VillainB",
+        "stack": 900.0,
+        "hole_cards": [],
+        "bet": 5.0,
+        "is_hero": false,
+        "is_dealer": false,
+        "sitting_out": false,
+        "active": false
+      }
+    ],
+    "hero_seat": 0,
+    "hero_name": "BobBot",
+    "available_actions": [
+      "fold",
+      "check"
+    ],
+    "action_amounts": {
+      "call": 20.0,
+      "raise": 60.0
+    },
+    "button_state": "",
+    "table_state": "SEATED",
+    "is_stale": false,
+    "updated_at": "2026-08-30T11:49:09.470116",
+    "scope_key": "player=e2e_bob|browser=979cd59faaf6|table=E2E-T1"
+  },
+  {
+    "player_id": "e2e_bob",
+    "browser_instance_id": "979cd59faaf6",
+    "table_id": "E2E-T2",
+    "hand_id": "H200",
+    "snapshot_version": 2,
+    "street": "TURN",
+    "pot": 80.0,
+    "board": [
+      "2s",
+      "5c",
+      "9d",
+      "Kh"
+    ],
+    "seats": [
+      {
+        "seat_no": 0,
+        "name": "BobBot",
+        "stack": 1000.0,
+        "hole_cards": [
+          "2c",
+          "2d",
+          "2h",
+          "2s"
+        ],
+        "bet": 5.0,
+        "is_hero": true,
+        "is_dealer": false,
+        "sitting_out": false,
+        "active": false
+      },
+      {
+        "seat_no": 1,
+        "name": "VillainB",
+        "stack": 900.0,
+        "hole_cards": [],
+        "bet": 5.0,
+        "is_hero": false,
+        "is_dealer": false,
+        "sitting_out": false,
+        "active": false
+      }
+    ],
+    "hero_seat": 0,
+    "hero_name": "BobBot",
+    "available_actions": [
+      "fold",
+      "check",
+      "call"
+    ],
+    "action_amounts": {
+      "call": 20.0,
+      "raise": 60.0
+    },
+    "button_state": "",
+    "table_state": "SEATED",
+    "is_stale": false,
+    "updated_at": "2026-08-30T11:49:09.458326",
+    "scope_key": "player=e2e_bob|browser=979cd59faaf6|table=E2E-T2"
+  },
+  {
+    "player_id": "e2e_alice",
+    "browser_instance_id": "dbd5cf0b735f",
+    "table_id": "E2E-T1",
+    "hand_id": "H100",
+    "snapshot_version": 2,
+    "street": "FLOP",
+    "pot": 60.0,
+    "board": [
+      "Td",
+      "9c",
+      "3s"
+    ],
+    "seats": [
+      {
+        "seat_no": 0,
+        "name": "AliceBot",
+        "stack": 980.0,
+        "hole_cards": [
+          "As",
+          "Ks",
+          "Qh",
+          "Jh"
+        ],
+        "bet": 10.0,
+        "is_hero": true,
+        "is_dealer": false,
+        "sitting_out": false,
+        "active": false
+      },
+      {
+        "seat_no": 1,
+        "name": "VillainA",
+        "stack": 1000.0,
+        "hole_cards": [],
+        "bet": 20.0,
+        "is_hero": false,
+        "is_dealer": false,
+        "sitting_out": false,
+        "active": false
+      }
+    ],
+    "hero_seat": 0,
+    "hero_name": "AliceBot",
+    "available_actions": [
+      "fold",
+      "check",
+      "call",
+      "raise"
+    ],
+    "action_amounts": {
+      "call": 20.0,
+      "raise": 60.0
+    },
+    "button_state": "",
+    "table_state": "SEATED",
+    "is_stale": false,
+    "updated_at": "2026-08-30T11:49:09.047298",
+    "scope_key": "player=e2e_alice|browser=dbd5cf0b735f|table=E2E-T1"
+  }
+]

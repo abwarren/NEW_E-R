@@ -1,0 +1,14 @@
+[
+  {
+    "command_id": "81e58407225142ff",
+    "player_id": "e2e_alice",
+    "browser_instance_id": "dbd5cf0b735f",
+    "table_id": "E2E-T1",
+    "hand_id": "H100",
+    "action": "call",
+    "amount": 20.0,
+    "status": "ACKNOWLEDGED",
+    "attempts": 1,
+    "created_at": "2026-08-30T11:49:09.425743"
+  }
+]

@@ -1,80 +1,49 @@
-# NEW_E-R — Greenfield E&R Poker Platform Rebuild
+# E&R PokerBet — Standalone remote-control + equity for PokerBet
 
-> ## ⚠️ SUPERSEDED (2026-08-12)
->
-> This greenfield rebuild is **abandoned**. Per the system harmonization decision —
-> **one application, different tenants (poker sites), reuse not rebuild** — all work
-> now lands in **[github.com/abwarren/pokerhud](https://github.com/abwarren/pokerhud)**.
-> The strategy lives at `pokerhud/docs/SYSTEM-HARMONIZATION.md` (one repo, one DB,
-> one process; retire the E-R/er-remote/er-engine cluster and the extra DBs).
-> This repo is kept for plan history only.
+> **Directive:** clean rebuild, PokerBet ONLY. Not pokerhud. Not multi-site.
+> Single FastAPI service: scrape → state → equity → dashboard → command →
+> browser → ACK.
 
-Greenfield rebuild of the E&R poker remote-control + equity platform. Replaces the
-poorly-engineered legacy codebase at [github.com/abwarren/E-R](https://github.com/abwarren/E-R)
-with a clean, modular, single-service architecture built with vertical slicing and tracer bullets,
-orchestrated by parallel AI agents.
+## Status
 
-**Status: ⏳ PLANNING — no code until the plan (PLAN.md) is approved.**
+**PARTIAL — READY**: backend, extension, 39 tests and a 16-step E2E harness all
+green (in-process). The live-table acceptance test needs valid PokerBet
+credentials (EXTERNAL BLOCKER). See `docs/REPORT-AJ.md`, `MILESTONE.md`.
 
-## Quick Links
-
-- **Plan:** [PLAN.md](PLAN.md) — full greenfield architecture, vertical slice map, tracer bullets, agent orchestration
-- **Legacy repo:** [github.com/abwarren/E-R](https://github.com/abwarren/E-R) (106 commits, 16,492 LOC, being replaced)
-- **Old rebuild plan (superseded):** `.hermes/plans/E&R-REBUILD-PLAN.md` in the legacy repo
-
-## What's Wrong With Legacy (why rebuild)
-
-| Problem | Evidence |
-|---------|----------|
-| Monolithic backend | `backend/app.py` = 3,963 lines |
-| Monolithic scraper | `source/w4p.js` = 2,190 lines |
-| Duplicate state (8 copies) | in-memory dicts + JSON files + extension + UI |
-| Multi-bot state collision | `_tables` indexed by `table_id` alone |
-| Epoch deadlock | 409 `stale_snapshot` permanent rejection |
-| Snapshot silent drops | `_lastSendTime` timing bug |
-| Selection oscillation/flicker | 28.6% authority accuracy heuristic |
-| 3 processes, 2 HTTP hops | Express :4000 → Flask :1080 → Engine :5002 |
-| Hardcoded IPs | `192.168.0.106` broke Chrome PNA |
-
-## Target Architecture (one paragraph)
-
-Single FastAPI service on one port (:8000): REST API + SSE push + one unified dashboard page
-(remote control grid + equity calculator together — not two pages), PostgreSQL-backed state in a
-fresh `new_er` database (no JSON files), eval7 equity engine imported in-process (no HTTP hop),
-modular w4p-v2.js scraper (~500 lines) with per-platform selector profiles (EvenBet + BetConstruct).
-Built in 5 vertical slices, each ending with a tested, demonstrable tracer bullet. Parallel AI
-subagents implement independent modules against a frozen interface contract (`docs/CONTRACTS.md`).
-
-## Build Sequence (vertical slices)
-
-| Slice | What It Proves | Tracer Bullet |
-|-------|---------------|---------------|
-| 0 | Repo skeleton + contracts + CI | `/api/health` 200, pytest green |
-| 1 | Lobby → Snapshot → Store → Serve | TB-001: one snapshot → PG row → UI render |
-| 2 | Sit → Scrape → Queue → Click | TB-002: queue → execute → ACK |
-| 3 | Equity in-process + SSE | TB-003: cards → equity % streamed to UI |
-| 4 | Auto C/F, C/C, KH + multi-table | TB-004: auto-rule → queued → executed |
-| 5 | GoldRush (BetConstruct) multi-platform | TB-005: both platforms, one API |
-
-Full details: [PLAN.md](PLAN.md)
-
-## Repo Layout (target)
-
-```
-backend/          FastAPI service (app factory, routes, services, engine, scrapers)
-extension/        Chrome MV3 extension (w4p-v2.js, background.js, selector profiles)
-migrations/       Alembic migrations
-tests/            unit/ + integration/ + e2e/ (tracer bullet harnesses)
-scripts/          browser launcher, deploy.sh, verify_contracts.py
-docs/             CONTRACTS.md (agent interface contracts), ARCHITECTURE.md
-```
-
-## Getting Started (once approved)
+## Quick start
 
 ```bash
-git clone git@github.com:abwarren/NEW_E-R.git
-cd NEW_E-R
-cp .env.example .env        # add real keys
-docker compose up -d        # single service + Postgres
-curl localhost:8000/api/health
+python3 -m venv .venv && .venv/bin/pip install -r backend/requirements.txt
+cp .env.example .env                 # set ER_API_KEY
+.venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8090
+curl -H "X-API-Key: $ER_API_KEY" http://127.0.0.1:8090/api/health
+# dashboard: http://127.0.0.1:8090/
 ```
+
+Player accounts (passwords → OS keyring, never on disk):
+
+```bash
+.venv/bin/python scripts/er-players.py register --username <user> --display-name "<name>"
+.venv/bin/python scripts/er-players.py list
+```
+
+Extension: chrome://extensions → Load unpacked → `extension/` → set identity in
+options → open `https://poker-web.pokerbet.co.za/18751019/`.
+
+## Layout
+
+```
+backend/          FastAPI service (config, models, schemas, state, command_queue,
+                  equity, main, players/, static/ dashboard)
+extension/        Chrome MV3 (manifest.json, w4p.js scraper+executor, options.html)
+scripts/          er-players.py (account CLI), run_e2e.py (acceptance harness)
+tests/            pytest (33) + node scraper tests (6) + dom_harness
+docs/             CONTRACTS.md, DOM-MAP.md, ADR-001..005, DEPLOYMENT.md, REPORT-AJ.md
+evidence/e2e/     E2E evidence output
+```
+
+## Gate 0 verdict (PokerBet DOM)
+
+PokerBet runs **BetConstruct SkillGames** at `poker-web.pokerbet.co.za`
+(same engine as GoldRush) — NOT EvenBet/PokerAlpha as the old plan assumed.
+Full selector map: `docs/DOM-MAP.md`.
