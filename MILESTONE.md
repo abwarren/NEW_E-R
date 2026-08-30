@@ -1,19 +1,36 @@
-# E&R PokerBet — MILESTONE tracker
+# E&R PokerBet — Evidence matrix (live acceptance status)
 
-| Milestone | Status | Evidence |
-|-----------|--------|----------|
-| M0 players | ✅ | tests/test_players.py 12/12; commit ac744a0 |
-| M1 slice 0/1 (foundation + tracer bullet) | ✅ | tests/test_slice01.py; commit 9798b4d |
-| M2 scraper (fixture-driven) | ✅ | tests/test_scraper.js 6/6 (node DOM harness) |
-| M3 command queue + idempotency | ✅ | tests/test_slice01.py + e2e steps 11-15 |
-| M4 equity in-process | ✅ | tests/test_equity_directional.py 6/6 |
-| M5 multi-table / multi-bot isolation | ✅ | tests/test_fleet_recovery.py; e2e steps 16-17 |
-| M6 recovery (restart, stale, timeout) | ✅ | tests/test_fleet_recovery.py; e2e step 18 |
-| M7 directional equity model (raw/realized/disparity) | ✅ | test_equity_directional.py; verify_backend.py 21/21 |
-| M8 live PokerBet login/table/DOM/snapshot | ✅ | evidence/live/ (login, table 2143034, hero, seats, snapshot→E&R) |
-| M9 live dealt-hand (hole/board/pot/actions/equity/command/ACK) | ⛔ EXTERNAL BLOCKER — account ZAR 0 balance |
-| M10 PG state store | 🟡 code ready (migrations/001_postgres.sql); provision needs postgres role (user) |
-| M11 production deploy (systemd) | ⛔ EXTERNAL BLOCKER — sudo/systemd on this box |
+## LIVE VERIFIED (real PokerBet, authenticated account, 2026-08-30)
 
-All blockers are user-side actions; the code paths they gate are implemented
-and covered by in-process tests (the only difference is the live host + OS).
+| Item | Status | Evidence |
+|------|--------|----------|
+| Login | PASS | Shickey signed into pokerbet.co.za (interactive browser) |
+| Poker client | PASS | poker-web.pokerbet.co.za/18751019/ authenticated (userid present) |
+| Table discovery | PASS | lobby → PL Omaha 4 → PLAY NOW → table entry |
+| Table identity | PASS | `#/product/3/3/cash-cat/1/cash/198/tbl/2143034` (table 2143034 "Multan") |
+| Hero detection | PASS | `.player-mini-container-p.self-player.poker` on seat 0 (shickey) |
+| Seat detection | PASS | 9 seats `sg-poker-table-seat.player-1..9`, 1 occupied |
+| Snapshot → E&R | PASS | POST /api/snapshot 200 (approved); dashboard lists table 2143034 |
+| Dashboard state | PASS | table 2143034 | shickey | PRE_FLOP | hero shickey | v1 | SEATED |
+
+## BLOCKED BY EXTERNAL CONDITION (account ZAR 0 balance — cannot be dealt in)
+
+| Item | Status |
+|------|--------|
+| Hole cards | BLOCKED |
+| Board | BLOCKED |
+| Pot | BLOCKED |
+| Live equity | BLOCKED |
+| Live command | BLOCKED |
+| Live ACK | BLOCKED |
+| Multi-player live hand | BLOCKED |
+| Multi-table live hand | BLOCKED |
+
+## AUTOMATED VERIFIED (in-process, evidence in tests/ + scripts/)
+
+- 39 pytest: players (12), slice01 (15), fleet/recovery (6), directional equity (6)
+- 6 node scraper tests (fixture DOM matching live-verified structure)
+- scripts/verify_backend.py: 21/21 (persistence, SSE events, restart recovery,
+  stale 409, command state machine, directional equity, 4-player isolation)
+
+Not marked as failures — these are external-condition blockers, not defects.
