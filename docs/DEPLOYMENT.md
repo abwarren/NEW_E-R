@@ -66,6 +66,20 @@ sudo systemctl restart er-pokerbet
 SQLAlchemy `create_all` + the DDL are identical across SQLite/PG; switching is
 one env change. `pool_pre_ping` handles PG connection drops.
 
+### Schema migrations (dev SQLite)
+
+`create_all` creates missing tables but does NOT alter existing ones. If a
+model changed since a previous run (e.g. equity_results gained per-perspective
+columns), the old table must be dropped once so it is recreated:
+
+```bash
+sqlite3 data/er_state.db "DROP TABLE equity_results;"   # only if schema drifted
+# restart uvicorn → create_all recreates it with the new schema
+```
+
+Production uses the explicit DDL in `backend/migrations/001_postgres.sql`
+(apply via psql; no create_all drift).
+
 ## 6. Dashboard
 
 Open `http://127.0.0.1:8090/` — tables grid + directional equity cards, SSE live.
