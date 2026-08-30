@@ -1,0 +1,25 @@
+# ── E&R PokerBet — Python ──
+.venv/
+__pycache__/
+*.pyc
+
+# ── Secrets / credentials — NEVER commit ──
+.env
+credentials.json
+*.key
+*_creds*.json
+
+# ── Local data (SQLite, runtime state) — never commit ──
+data/
+*.db
+*.db-journal
+*.sqlite3
+
+# ── Chrome import scratch — never commit ──
+chrome-import-tmp/
+
+# ── Tooling ──
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.log
