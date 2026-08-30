@@ -224,9 +224,9 @@ def test_equity_plo_aces_beat_deuces():
     assert r.status_code == 200
     eq = r.json()
     assert not eq["error"]
-    assert len(eq["equities"]) == 2
-    assert eq["equities"][0] > 90  # broadway vs pair ≈ always
-    assert abs(sum(eq["equities"]) - 100) < 2
+    assert len(eq["results"]) == 2  # A→B and B→A
+    ab = next(x for x in eq["results"] if x["hero_index"] == 0 and x["villain_index"] == 1)
+    assert ab["raw_equity"] > 90  # broadway vs pair ≈ always
 
 
 def test_equity_holdem():
@@ -239,7 +239,8 @@ def test_equity_holdem():
     assert r.status_code == 200
     eq = r.json()
     assert not eq["error"]
-    assert eq["equities"][0] > 60  # AA >> KK preflop
+    ab = next(x for x in eq["results"] if x["hero_index"] == 0 and x["villain_index"] == 1)
+    assert ab["raw_equity"] > 60  # AA >> KK preflop
 
 
 def test_equity_invalid_cards_fail_safely():
@@ -251,7 +252,7 @@ def test_equity_invalid_cards_fail_safely():
     }, headers=H)
     assert r.status_code == 200
     assert r.json()["error"]
-    assert r.json()["equities"] == []
+    assert r.json()["results"] == []
 
 
 # ── identity / isolation at the service layer ──────────────────────────────

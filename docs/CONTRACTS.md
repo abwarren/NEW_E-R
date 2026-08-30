@@ -79,8 +79,30 @@ CREATED → QUEUED → DELIVERED → EXECUTING → ACKNOWLEDGED
 {"variant":"plo","hands":[["As","Ks","Qh","Jh"],["2c","2d","2h","2s"]],
  "board":["Kd","Qc","Ts","7h","5d"],"samples":2000}
 ```
-→ `{"variant":"plo","hands":[...],"board":[...],"equities":[97.4,2.6],"samples":2000,"error":""}`
-Invalid cards → `error` set, `equities: []` (safe failure, never a crash).
+→
+```json
+{"variant":"plo","hands":[...],"board":[...],
+ "results":[
+   {"hero_index":0,"villain_index":1,"hero_cards":["As","Ks","Qh","Jh"],
+    "villain_cards":["2c","2d","2h","2s"],
+    "raw_equity":97.4,"realized_equity":51.3,"disparity":-46.1}
+ ],
+ "samples":2000,"error":""}
+```
+
+### AUTHORITATIVE EQUITY CONTRACT (directional, multi-hero)
+
+- **Every player is hero to himself.** There is no table-level hero.
+- N known players ⇒ N × (N−1) directional results (6 players ⇒ 30).
+- **RAW equity** = broadcast-known true equity: hero vs villain with ALL other
+  known players' hole cards treated as dead cards removed from the deck.
+- **REALIZED equity** = hero's information-perspective equity: uses ONLY the
+  hero's own hole cards + board + an unknown villain range. Opponents' actual
+  hole cards are NEVER used.
+- **DISPARITY** = realized − raw. Stored/displayed separately.
+- **Remote aggregation:** Remote → Table → Hand → Hero → Villain. Never a
+  single table equity number; never aggregate across tables.
+- Invalid cards → `error` set, `results: []` (safe failure, never a crash).
 
 ## TableView (dashboard)
 

@@ -73,11 +73,22 @@ $('eq-run').addEventListener('click', async () => {
     const r = await fetch('/api/equity', { method: 'POST', headers: H, body: JSON.stringify({ variant: 'plo', hands, board, samples: 2000 }) });
     const res = await r.json();
     if (res.error) { out.textContent = 'error: ' + res.error; return; }
-    out.innerHTML = res.hands.map((h, i) => `
-      <div>${h.join(' ')}</div>
-      <div class="eqbar"><div style="width:${res.equities[i]}%"></div></div>
-      <div class="muted" style="font-size:12px">${res.equities[i]}% (${res.samples} samples)</div>
-    `).join('');
+    // directional cards: every hero → every villain (raw/realized/disparity)
+    const byHero = {};
+    res.results.forEach(x => {
+      (byHero[x.hero_index] = byHero[x.hero_index] || []).push(x);
+    });
+    out.innerHTML = Object.keys(byHero).map(hi => `
+      <div class="hero-block">
+        <div class="hero-title">HERO ${hands[hi].join(' ')}</div>
+        ${byHero[hi].map(x => `
+          <div class="eq-card">
+            <div class="eq-card-head">${hands[x.hero_index].join(' ')} → ${hands[x.villain_index].join(' ')}</div>
+            <div class="eq-row"><span>Raw</span><b>${x.raw_equity}%</b></div>
+            <div class="eq-row"><span>Realized</span><b>${x.realized_equity}%</b></div>
+            <div class="eq-row ${x.disparity < 0 ? 'neg' : 'pos'}"><span>Disparity</span><b>${x.disparity >= 0 ? '+' : ''}${x.disparity}%</b></div>
+          </div>`).join('')}
+      </div>`).join('');
   } catch (e) { out.textContent = 'request failed: ' + e; }
 });
 

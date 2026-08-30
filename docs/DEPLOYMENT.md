@@ -50,9 +50,25 @@ curl -H "X-API-Key: $ER_API_KEY" http://127.0.0.1:8090/api/health
 2. Options → API base `http://127.0.0.1:8090`, API key, Player ID, Browser ID
 3. Open `https://poker-web.pokerbet.co.za/18751019/` → snapshots flow
 
-## 5. Dashboard
+## 5. PostgreSQL (production state store)
 
-Open `http://127.0.0.1:8090/` — tables grid + equity panel, SSE live.
+```bash
+# provision (postgres superuser)
+sudo -u postgres psql -c "CREATE ROLE er_user LOGIN PASSWORD '<strong>';"
+sudo -u postgres psql -c "CREATE DATABASE new_er OWNER er_user;"
+# apply schema
+psql -U er_user -d new_er -f backend/migrations/001_postgres.sql
+# point E&R at it
+echo 'ER_DB_URL=postgresql+psycopg2://er_user:<strong>@localhost:5432/new_er' >> .env
+sudo systemctl restart er-pokerbet
+```
+
+SQLAlchemy `create_all` + the DDL are identical across SQLite/PG; switching is
+one env change. `pool_pre_ping` handles PG connection drops.
+
+## 6. Dashboard
+
+Open `http://127.0.0.1:8090/` — tables grid + directional equity cards, SSE live.
 
 ## Rollback
 

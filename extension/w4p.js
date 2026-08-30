@@ -29,11 +29,15 @@
   };
 
   // ── Selector profile: PokerBet (BetConstruct SkillGames) ───────────────
+  // Live-verified 2026-08-30 at poker-web.pokerbet.co.za/18751019/
+  // (table 2143034 "Multan"): seats are sg-poker-table-seat.player-N, hero is
+  // the .player-mini-container-p.self-player.poker wrapper INSIDE the hero
+  // seat; name = .player-name-count-v.self-player, stack = .player-text-info-p.
   var SEL = {
     tableProof: 'sg-poker-table, sg-poker-table-seat, .player-mini-container-p, .control-b-view-p, .pot-w-view-p, .single-cart-view-p',
-    seatContainer: 'sg-poker-table-seat, .player-mini-container-p',
-    heroClass: '.self-player',
-    playerName: 'p.single-win-item-sizes, .player-name',
+    seatContainer: 'sg-poker-table-seat',
+    heroClass: '.player-mini-container-p.self-player.poker, .player-mini-container-p.self-player',
+    playerName: '.player-name-count-v.self-player, .player-name, p.single-win-item-sizes',
     stack: '.player-text-info-p span b, .player-text-info-p b, .player-stack',
     holeCards: '.carts-container-p .single-cart-view-p',
     board: 'sg-poker-board .single-cart-view-p, .board-cards-view-p .single-cart-view-p',
@@ -103,7 +107,9 @@
     var heroSeat = -1;
     var containers = document.querySelectorAll(SEL.seatContainer);
     containers.forEach(function (c, i) {
-      var isHero = !!(c.querySelector(SEL.heroClass) || c.classList.contains('self-player'));
+      // hero = self-player wrapper INSIDE the seat (live-verified structure)
+      var heroWrap = c.querySelector(SEL.heroClass);
+      var isHero = !!heroWrap;
       var nameEl = c.querySelector(SEL.playerName);
       var name = nameEl ? textOf(nameEl) : '';
       var stackEl = c.querySelector(SEL.stack);

@@ -72,24 +72,28 @@ def _get_safe_storage_key() -> bytes:
     raise ChromeVaultUnavailable("Chrome Safe Storage key not found in OS keyring")
 
 
-def _derive_aes_key(safe_storage_value: bytes) -> bytes:
-    """Derive the AES key. The keyring value may be raw bytes or base64."""
+def _derive_aes_key(safe_storage_value: bytes, version: str = "v10") -> bytes:
+    """Derive the AES key. The keyring value may be raw bytes or base64.
+
+    Chrome v10: PBKDF2 iterations=1. Chrome v11 (v11-prefixed blobs): 1003.
+    """
     candidates = [safe_storage_value]
     try:
         candidates.append(base64.b64decode(safe_storage_value, validate=True))
     except Exception:
         pass
+    iterations = 1003 if version == "v11" else 1
     for c in candidates:
         if len(c) >= AES_KEY_LEN:
             return hashlib.pbkdf2_hmac(
-                "sha1", c, AES_KEY_SALT, PBKDF2_ITERATIONS, dklen=AES_KEY_LEN
+                "sha1", c, AES_KEY_SALT, iterations, dklen=AES_KEY_LEN
             )
     raise ChromeVaultUnavailable("unusable Chrome Safe Storage key material")
 
 
 def _decrypt(encrypted: bytes, aes_key: bytes) -> str:
     payload = encrypted
-    if payload.startswith(b"v10"):
+    if payload[:3] in (b"v10", b"v11"):
         payload = payload[3:]
     cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
     dec = cipher.decryptor()

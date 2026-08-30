@@ -7,27 +7,37 @@ const assert = require('assert');
 const { make } = require('./dom_harness');
 
 // ── build the fixture DOM: FLOP state, hero on seat 0 ─────────────────────
+// Live-verified 2026-08-30 structure: sg-poker-table-seat.player-N seats,
+// hero wrapper .player-mini-container-p.self-player.poker inside hero seat.
 function buildFlopFixture() {
   const table = make('sg-poker-table');
 
-  const hero = make('sg-poker-table-seat', 'self-player');
-  hero.append(
-    make('p', 'single-win-item-sizes', 'Hero'),
-    make('div', 'player-text-info-p').append(make('span').append(make('b', '', '1000'))),
-    make('div', 'carts-container-p').append(
-      make('div', 'single-cart-view-p', 'As'),
-      make('div', 'single-cart-view-p', 'Ks')
+  const heroSeat = make('sg-poker-table-seat', 'player-1');
+  heroSeat.append(
+    make('div', 'player-mini-container-p self-player poker').append(
+      make('div', 'player-info-line').append(
+        make('div', 'player-name-count-v self-player', 'Hero'),
+        make('div', 'player-text-info-p').append(make('span').append(make('b', '', '1000')))
+      ),
+      make('div', 'carts-container-p').append(
+        make('div', 'single-cart-view-p', 'As'),
+        make('div', 'single-cart-view-p', 'Ks')
+      )
     ),
     make('div', 'dealer-icon-view')
   );
 
-  const villain = make('sg-poker-table-seat');
-  villain.append(
-    make('p', 'single-win-item-sizes', 'Villain'),
-    make('div', 'player-text-info-p').append(make('span').append(make('b', '', '950'))),
-    make('div', 'carts-container-p').append(
-      make('div', 'single-cart-view-p'), // card back — no text
-      make('div', 'single-cart-view-p')
+  const villainSeat = make('sg-poker-table-seat', 'player-2');
+  villainSeat.append(
+    make('div', 'player-mini-container-p poker').append(
+      make('div', 'player-info-line').append(
+        make('div', 'player-name-count-v', 'Villain'),
+        make('div', 'player-text-info-p').append(make('span').append(make('b', '', '950')))
+      ),
+      make('div', 'carts-container-p').append(
+        make('div', 'single-cart-view-p'), // card back — no text
+        make('div', 'single-cart-view-p')
+      )
     )
   );
 
@@ -50,7 +60,7 @@ function buildFlopFixture() {
   // hidden all_in: offsetParent must be null
   controls.children[4].offsetParent = null;
 
-  table.append(hero, villain, board, pot, controls);
+  table.append(heroSeat, villainSeat, board, pot, controls);
   return table;
 }
 

@@ -153,7 +153,10 @@ def ack_command(ack: CommandAck, _auth: None = Depends(require_api_key)):
 @app.post("/api/equity", response_model=EquityResult)
 def equity(req: EquityRequest, _auth: None = Depends(require_api_key)):
     result = calculate(req)
-    publish("equity", "global", {"equities": result.equities, "error": result.error})
+    publish("equity", "global", {
+        "results": [r.model_dump() for r in result.results],
+        "error": result.error,
+    })
     return result
 
 

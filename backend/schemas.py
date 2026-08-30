@@ -115,11 +115,31 @@ class EquityRequest(BaseModel):
     samples: int = Field(default=2000, ge=100, le=100000)
 
 
+class DirectionalResult(BaseModel):
+    """One hero→villain directional equity result (the fundamental object).
+
+    raw_equity      = broadcast-known true equity (all known cards, opponents'
+                      hole cards are dead cards removed from the deck)
+    realized_equity = hero's information-perspective equity (hero's own cards +
+                      board + unknown opponent range; opponents' actual hole
+                      cards are NEVER used)
+    disparity       = realized_equity − raw_equity
+    """
+
+    hero_index: int
+    villain_index: int
+    hero_cards: list[str]
+    villain_cards: list[str]
+    raw_equity: float
+    realized_equity: float
+    disparity: float
+
+
 class EquityResult(BaseModel):
     variant: str
     hands: list[list[str]]
     board: list[str]
-    equities: list[float]
+    results: list[DirectionalResult] = Field(default_factory=list)
     samples: int
     error: str = ""
 
