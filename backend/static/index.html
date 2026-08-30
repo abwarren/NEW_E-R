@@ -42,6 +42,18 @@
   .eq-row span { color:var(--muted); }
   .eq-row.pos b { color:var(--green); }
   .eq-row.neg b { color:var(--red); }
+  .player-block { margin-bottom:14px; border:1px solid var(--line); border-radius:8px; padding:10px; }
+  .player-head { font-weight:700; font-size:14px; margin-bottom:8px; }
+  .table-card { background:#0d1117; border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-bottom:8px; }
+  .table-card.stale { border-color:var(--red); }
+  .table-head { display:flex; gap:10px; align-items:center; font-size:13px; margin-bottom:6px; flex-wrap:wrap; }
+  .table-meta { display:flex; gap:16px; font-size:12px; color:var(--fg); margin-bottom:6px; flex-wrap:wrap; }
+  .table-controls { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .btn.act { font-weight:700; }
+  .btn.act.fold { color:var(--red); border-color:var(--red); }
+  .btn.act.check { color:var(--blue); border-color:var(--blue); }
+  .btn.act.call { color:var(--green); border-color:var(--green); }
+  .btn.act.bet, .btn.act.raise { color:var(--amber); border-color:var(--amber); }
 </style>
 </head>
 <body>
@@ -52,21 +64,19 @@
 </header>
 
 <div class="grid">
-  <div class="panel">
-    <h2>Active tables</h2>
-    <table id="tables"><thead>
-      <tr><th>Scope (player / browser)</th><th>Table</th><th>Hand</th><th>Street</th><th>Hero</th><th>Pot</th><th>Board</th><th>Actions</th><th>State</th><th>Updated</th></tr>
-    </thead><tbody id="tbody"><tr><td colspan="10" class="muted">no tables yet — waiting for snapshots…</td></tr></tbody></table>
+  <div class="panel" style="grid-column:1/-1;">
+    <h2>Fleet control (remote → player → table → hand)</h2>
+    <div id="fleet"><div class="muted">no tables yet — waiting for snapshots…</div></div>
   </div>
 
-  <div class="panel">
-    <h2>Equity (eval7 in-process)</h2>
+  <div class="panel" style="grid-column:1/-1;">
+    <h2>Equity (eval7 in-process, directional)</h2>
     <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
-      <input id="eq-hands" placeholder='[["As","Ks","Qh","Jh"],["2c","2d","2h","2s"]]' style="flex:1; min-width:220px; background:#0d1117; border:1px solid var(--line); color:var(--fg); border-radius:6px; padding:6px; font:12px ui-monospace,monospace;">
-      <input id="eq-board" placeholder='["Td","9c","3s"]' style="width:150px; background:#0d1117; border:1px solid var(--line); color:var(--fg); border-radius:6px; padding:6px; font:12px ui-monospace,monospace;">
+      <input id="eq-hands" placeholder='[[&quot;As&quot;,&quot;Ks&quot;,&quot;Qh&quot;,&quot;Jh&quot;],[&quot;2c&quot;,&quot;2d&quot;,&quot;2h&quot;,&quot;2s&quot;]]' style="flex:1; min-width:220px; background:#0d1117; border:1px solid var(--line); color:var(--fg); border-radius:6px; padding:6px; font:12px ui-monospace,monospace;">
+      <input id="eq-board" placeholder='[&quot;Kd&quot;,&quot;Qc&quot;,&quot;Ts&quot;]' style="width:150px; background:#0d1117; border:1px solid var(--line); color:var(--fg); border-radius:6px; padding:6px; font:12px ui-monospace,monospace;">
       <button class="btn" id="eq-run">Run</button>
     </div>
-    <div id="eq-result" class="muted">run a calculation to see equity</div>
+    <div id="eq-result" class="muted">run a calculation to see directional equity</div>
   </div>
 
   <div class="panel" style="grid-column:1/-1;">

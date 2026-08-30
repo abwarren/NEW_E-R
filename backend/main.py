@@ -157,6 +157,33 @@ def equity(req: EquityRequest, _auth: None = Depends(require_api_key)):
         "results": [r.model_dump() for r in result.results],
         "error": result.error,
     })
+    # persist per-perspective rows + a traceable event (authoritative data
+    # model: perspective is explicit — table/hand/hero/villain).
+    if result.results:
+        from .models import EquityResult as EquityRow, Event
+        from .db import session as db_session
+
+        with db_session() as s:
+            for dr in result.results:
+                s.add(EquityRow(
+                    table_id=req.table_id or "",
+                    hand_id=req.hand_id or "",
+                    hero_player_id=req.hero_player_id or "",
+                    villain_player_id=req.villain_player_id or "",
+                    raw_equity=dr.raw_equity,
+                    realized_equity=dr.realized_equity,
+                    disparity=dr.disparity,
+                    variant=req.variant,
+                ))
+            s.add(Event(
+                type="equity",
+                scope=f"{req.table_id or 'global'}|{req.hand_id or ''}",
+                payload=json.dumps({
+                    "results": [r.model_dump() for r in result.results],
+                    "error": result.error,
+                }),
+            ))
+            s.commit()
     return result
 
 

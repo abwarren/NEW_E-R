@@ -113,6 +113,12 @@ class EquityRequest(BaseModel):
     hands: list[list[str]] = Field(min_length=2, max_length=6)
     board: list[str] = Field(default_factory=list)
     samples: int = Field(default=2000, ge=100, le=100000)
+    # optional scope — lets the dashboard persist which table/hand/players a
+    # calculation belongs to (the authoritative data-model requirement)
+    table_id: str = ""
+    hand_id: str = ""
+    hero_player_id: str = ""
+    villain_player_id: str = ""
 
 
 class DirectionalResult(BaseModel):

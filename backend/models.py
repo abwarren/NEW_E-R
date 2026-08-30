@@ -104,13 +104,23 @@ class Event(Base):
 
 
 class EquityResult(Base):
+    """One persisted directional equity row (authoritative data model).
+
+    Perspective is explicit: table_id + hand_id + hero_player_id +
+    villain_player_id identify whose view a number represents. raw = broadcast
+    truth (dead cards); realized = hero info-perspective; disparity = real−raw.
+    """
+
     __tablename__ = "equity_results"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    scope: Mapped[str] = mapped_column(String(256), default="", index=True)
+    table_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    hand_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    hero_player_id: Mapped[str] = mapped_column(String(64), default="", index=True)
+    villain_player_id: Mapped[str] = mapped_column(String(64), default="")
+    raw_equity: Mapped[float] = mapped_column(Float, default=0.0)
+    realized_equity: Mapped[float] = mapped_column(Float, default=0.0)
+    disparity: Mapped[float] = mapped_column(Float, default=0.0)
+    calculation_version: Mapped[str] = mapped_column(String(16), default="1")
     variant: Mapped[str] = mapped_column(String(16), default="plo")
-    hands: Mapped[str] = mapped_column(Text)  # JSON
-    board: Mapped[str] = mapped_column(Text, default="[]")
-    result: Mapped[str] = mapped_column(Text)  # JSON EquityResult
-    samples: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
