@@ -14,8 +14,10 @@ AUTHORITATIVE EQUITY CONTRACT:
 Pipeline: PokerBet cards → normalisation → validation → eval7 → structured
 results. Invalid/impossible cards fail safely with a clear error.
 
-Variants: PLO (default) and holdem. PLO evaluates the mean of the 6
-(2-of-4 × 3-of-5) combos; holdem is standard 5-of-7 evaluation.
+Variants: PLO (default) and holdem. PLO supports any street (0, 3, 4, or 5
+board cards) — Monte Carlo runs out the remaining cards per simulation; hand
+strength is the best combo over 2-of-4 hole × 3-of-completed-board.
+Holdem is standard 5-of-7 evaluation; also supports 0, 3, 4, or 5 board cards.
 """
 from __future__ import annotations
 
@@ -61,9 +63,10 @@ def _deck_excluding(used: set[str]) -> list[str]:
 
 
 def _plo_combo_strength(hole: list[str], board: list[str]) -> float:
-    """Best eval7 score over the 6 Omaha combos (2 of 4 × 3 of 5).
+    """Best eval7 score over the Omaha combos (2 of 4 hole × 3 of board).
 
     eval7 convention: HIGHER score = stronger hand.
+    board must have at least 3 cards (after Monte Carlo runout).
     """
     best: float | None = None
     hole_cards = [eval7.Card(c) for c in hole]
@@ -73,7 +76,7 @@ def _plo_combo_strength(hole: list[str], board: list[str]) -> float:
             score = eval7.evaluate(list(h) + list(b))
             if best is None or score > best:
                 best = score
-    assert best is not None  # hole=4, board=5 ⇒ combos are never empty
+    assert best is not None  # hole=4, board≥3 ⇒ combos are never empty
     return best
 
 
@@ -119,8 +122,8 @@ def calculate(req: EquityRequest) -> EquityResult:
         if len(all_cards) != len(set(all_cards)):
             raise CardValidationError("cards overlap between hands/board")
         if req.variant == "plo":
-            if len(board) != 5:
-                raise CardValidationError("PLO equity requires a full 5-card board")
+            if len(board) not in (0, 3, 4, 5):
+                raise CardValidationError("PLO board must have 0, 3, 4 or 5 cards")
         else:
             if len(board) not in (0, 3, 4, 5):
                 raise CardValidationError("holdem board must have 0, 3, 4 or 5 cards")

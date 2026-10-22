@@ -31,6 +31,7 @@ from .command_queue import CommandQueue
 from .config import settings
 from .db import init_db, session
 from .equity import calculate
+from .auto_actions import AutoActionEngine
 from .players.db import PlayerDatabase
 from .players.identity import IdentityService
 from .schemas import CommandAck, CommandCreate, CommandView, EquityRequest, EquityResult, PlayerView, SnapshotPayload, TableView
@@ -200,6 +201,83 @@ def equity(req: EquityRequest, _auth: None = Depends(require_api_key)):
             ))
             s.commit()
     return result
+
+
+# ── auto-action (threshold engine) ──────────────────────────────────────────
+
+_auto_engine = AutoActionEngine(samples=300)
+
+
+from pydantic import BaseModel as _PydanticBase  # noqa: E402
+
+
+class AutoActionRequest(_PydanticBase):
+    player_id: str
+    browser_instance_id: str
+    table_id: str
+
+
+class AutoActionResponse(_PydanticBase):
+    action: str | None = None
+    amount: float | None = None
+    equity: float | None = None
+    confidence: float | None = None
+    reasoning: str = ""
+    command_id: str | None = None
+
+
+@app.post("/api/auto_action", response_model=AutoActionResponse)
+def auto_action(req: AutoActionRequest, _auth: None = Depends(require_api_key)):
+    """Evaluate the current table state and optionally queue an action.
+
+    Returns the Decision if one was made (action, amount, equity, reasoning)
+    and the command_id of the queued command, or action=None if no action was
+    warranted (not hero's turn, not enough info, etc.).
+    """
+    store, queue = _services()
+    view = store.get_table(req.player_id, req.browser_instance_id, req.table_id)
+    if view is None:
+        raise HTTPException(status_code=404, detail="table not found")
+    if not view.available_actions:
+        return AutoActionResponse(reasoning="no available actions — not hero's turn")
+
+    # Extract hero hole cards from the stored seat data
+    hero_hole: list[str] = []
+    for seat in view.seats:
+        if seat.seat_no == view.hero_seat and seat.hole_cards:
+            hero_hole = seat.hole_cards
+            break
+
+    decision = _auto_engine.evaluate(view, hero_hole)
+    if decision is None:
+        return AutoActionResponse(reasoning="engine: no decision (insufficient info)")
+
+    # Queue the command
+    try:
+        cmd = queue.create(CommandCreate(
+            player_id=req.player_id,
+            browser_instance_id=req.browser_instance_id,
+            table_id=req.table_id,
+            hand_id=view.hand_id,
+            action=decision.action,
+            amount=decision.amount,
+        ))
+        publish("command", req.player_id, {
+            "command_id": cmd.command_id,
+            "action": cmd.action,
+            "source": "auto",
+            "reasoning": decision.reasoning,
+        })
+        return AutoActionResponse(
+            action=decision.action,
+            amount=decision.amount,
+            equity=decision.equity,
+            confidence=decision.confidence,
+            reasoning=decision.reasoning,
+            command_id=cmd.command_id,
+        )
+    except (ValueError, PermissionError, KeyError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ── SSE live events ────────────────────────────────────────────────────────
